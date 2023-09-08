@@ -68,26 +68,15 @@ namespace NordVpnAccountsChecker.Extensions
         {
             while (true)
             {
-                try
-                {
-                    var h1 = driver.FindElement(By.XPath("//*[@id=\"app\"]/div/div/div/div/div/div/h1"));
-
-                    if (h1 != null && h1.Text == Message.TooManyRequests)
-                    {
-                        driver.RandomWait(minSeconds: 300, maxSeconds: 600);
-
-                        driver.Navigate().GoToUrl(loginUrl);
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                catch
+                if (driver.Url.StartsWith("https://nordaccount.com/login-entry"))
                 {
                     driver.RandomWait(minSeconds: 300, maxSeconds: 600);
 
                     driver.Navigate().GoToUrl(loginUrl);
+                }
+                else
+                {
+                    break;
                 }
             }
         }
