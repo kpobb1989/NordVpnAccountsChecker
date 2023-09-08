@@ -7,7 +7,7 @@ namespace NordVpnAccountsChecker.Components
 {
     public static class ChromeDriverEx
     {
-        public static IWebDriver CreateUndetectedChromeDriver(Dictionary<string, object> prefs = null)
+        public static IWebDriver CreateUndetectedChromeDriver(Dictionary<string, object>? prefs = null)
         {
             var driver = UndetectedChromeDriver.Create(prefs: prefs, driverExecutablePath: $@"{AppDomain.CurrentDomain.BaseDirectory}chromedriver.exe");
 

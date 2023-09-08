@@ -1,4 +1,6 @@
-﻿namespace NordVpnAccountsChecker
+﻿using System;
+
+namespace NordVpnAccountsChecker
 {
     public static class Message
     {
@@ -7,5 +9,6 @@
         public static string TooManyRequestsTryIn5Mins = "Too many failed attempts. Please try again in 5 minutes.";
         public static string IncorrectPassword = "The password you entered is incorrect. Please try again.";
         public static string AuthenticatorApp = "Authenticator app";
+        public static string NoActiveSubscriptions = "No active subscriptions";
     }
 }
