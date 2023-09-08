@@ -120,23 +120,48 @@ namespace NordVpnAccountsChecker.Extensions
             }
         }
 
-        public static void HandleMessage(this IWebDriver driver)
+        public static bool HandleMessage(this IWebDriver driver)
         {
+            bool success = false;
+
             // Find an erorr message
-            var message = driver.FindElementWithTimeout(By.XPath("//*[@id=\"app\"]/div/div/main/div[1]/div/p/span")).Text;
-
-            Console.WriteLine($"{DateTime.Now:MM/dd/yyyy hh:mm tt}: {message}");
-
-            if (message == Message.AccountBlocked || message == Message.IncorrectPassword)
+            try
             {
-                RandomWait(minSeconds: 10, maxSeconds: 30);
-            }
-            else if (message == Message.TooManyRequestsTryIn5Mins)
-            {
-                Console.WriteLine("Waiting 5 mins");
+                var message = driver.FindElementWithTimeout(By.XPath("//*[@id=\"app\"]/div/div/main/div[1]/div/p/span")).Text;
 
-                Thread.Sleep(TimeSpan.FromSeconds(5 * 60 + 10));
+                if (message == Message.AccountBlocked || message == Message.IncorrectPassword)
+                {
+                    RandomWait(minSeconds: 10, maxSeconds: 30);
+                }
+                else if (message == Message.TooManyRequestsTryIn5Mins)
+                {
+                    Console.WriteLine("Waiting 5 mins");
+
+                    Thread.Sleep(TimeSpan.FromSeconds(5 * 60 + 10));
+                }
+                else
+                {
+                    success = true;
+
+                    RandomWait(minSeconds: 10, maxSeconds: 30);
+                }
             }
+            catch
+            {
+            }
+
+            var text = driver.FindElementWithTimeout(By.XPath("//*[@id=\"app\"]/div/div/main/h1")).Text; 
+
+            if(text == Message.AuthenticatorApp)
+            {
+                success = false;
+            }
+
+            // https://my.nordaccount.com/billing/my-subscriptions/
+            // //*[@id="app"]/div[2]/div[2]/div/div[1]/div[3]/div/div/div[1]/p
+            // No active subscriptions
+
+            return success;
         }
 
         private static void RandomWait(int minSeconds = 1, int maxSeconds = 5)

