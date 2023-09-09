@@ -8,7 +8,7 @@ namespace NordVpnAccountsChecker.Extensions
     {
         public static IWebElement FindElementWithTimeout(this IWebDriver driver, By by)
         {
-            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
 
             wait.Until(s =>
             {
@@ -68,13 +68,22 @@ namespace NordVpnAccountsChecker.Extensions
         {
             while (true)
             {
-                if (driver.Url.StartsWith("https://nordaccount.com/login-entry"))
+                try
                 {
-                    driver.RandomWait(minSeconds: 300, maxSeconds: 600);
+                    var h1 = driver.FindElement(By.XPath("//*[@id='app']/div/div/main/h1"));
 
-                    driver.Navigate().GoToUrl(loginUrl);
+                    if (h1 != null && h1.Text == Message.TooManyRequests)
+                    {
+                        driver.RandomWait(minSeconds: 300, maxSeconds: 600);
+
+                        driver.Navigate().GoToUrl(loginUrl);
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
-                else
+                catch
                 {
                     break;
                 }
