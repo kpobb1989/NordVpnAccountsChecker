@@ -124,15 +124,14 @@ namespace NordVpnAccountsChecker.Extensions
 
                     try
                     {
-                        var text = driver.FindElementWithTimeout(By.XPath("//*[@id=\"app\"]/div[2]/div[2]/div/div[1]/div[3]/div/div/div[1]/p")).Text;
+                        var text = driver.FindElementWithTimeout(By.XPath("//p[text()='No active subscriptions']")).Text;
 
                         success = text != Message.NoActiveSubscriptions;
-
-                        return success;
                     }
-                    catch { }
-
-                    success = true;
+                    catch
+                    {
+                        success = true;
+                    }
 
                     // log out
                     driver.FindElementWithTimeout(By.XPath("//*[@id=\"app\"]/div[2]/div[2]/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/button")).Click();
